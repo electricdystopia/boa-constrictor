@@ -145,7 +145,8 @@ def main():
 
     # Apply CLI overrides
     progress = not args.no_progress and config.get('progress', True)
-    device =  config.get('device', 'cuda' if torch.cuda.is_available() else 'cuda') or args.device
+    # device =  config.get('device', 'cuda' if torch.cuda.is_available() else 'cuda') or args.device
+    device = args.device or config.get('device', 'cpu')
     
     print(device)
     precision = args.precision or config.get('precision', 'fp32')
