@@ -430,7 +430,9 @@ def main():
         print("\nBaseline compression results:")
         print(f"  Original size: {orig_size} bytes")
         for k in ('lzma', 'zlib', 'rntuple'):
-            r = results.get(k, {})
+            r = results.get(k)
+            if not r:          # skip if key wasn't populated at all
+                continue
             if 'error' in r:
                 print(f"  {k.upper()}: ERROR: {r['error']}")
                 continue
