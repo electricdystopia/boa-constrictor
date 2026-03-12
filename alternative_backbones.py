@@ -252,7 +252,7 @@ class AlternativeBoaModel(nn.Module):
                  num_layers: int = 4, **kwargs):
         super().__init__()
         self.backbone_name = backbone
-        self.embed = ByteEmbedding(d_model)
+        self.embedding = ByteEmbedding(d_model)
 
         if backbone == "lstm":
             self.backbone = LSTMBackbone(d_model, num_layers,
@@ -281,7 +281,7 @@ class AlternativeBoaModel(nn.Module):
             logits : (batch, seq_len, 256)
             state  : updated RNN state (None for Transformer)
         """
-        emb = self.embed(x)                        # (B, T, d_model)
+        emb = self.embedding(x)                        # (B, T, d_model)
 
         if self._is_recurrent:
             hidden, state = self.backbone(emb, state)
