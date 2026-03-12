@@ -372,60 +372,6 @@ def run_benchmark(backbone: str, d_model: int = 256, num_layers: int = 4,
     return {"backbone": backbone, "throughput_bps": throughput,
             "params": params, "latency_ms": (elapsed / n_iters) * 1000}
 
-
-# ---------------------------------------------------------------------------
-# 7.  Integration patch instructions
-# ---------------------------------------------------------------------------
-
-INTEGRATION_INSTRUCTIONS = """
-HOW TO INTEGRATE INTO BOA CONSTRICTOR
-======================================
-
-Step 1: Copy this file to the root of your forked BOA repo
-    cp alternative_backbones.py /path/to/your/boa-constrictor/
-
-Step 2: Edit model.py (or main.py) to import the new model
-    At the top of model.py, add:
-        from alternative_backbones import build_boa_model
-
-Step 3: In the part of the code that instantiates BoaConstrictor, replace:
-        model = BoaConstrictor(d_model=cfg.d_model, num_layers=cfg.num_layers)
-    with:
-        backbone = getattr(cfg, "backbone", "lstm")   # default to lstm
-        model = build_boa_model(backbone=backbone,
-                                d_model=cfg.d_model,
-                                num_layers=cfg.num_layers)
-
-Step 4: Add backbone field to your experiment YAML:
-        model:
-          d_model: 256
-          num_layers: 4
-          backbone: lstm        # or "transformer"
-
-Step 5: Run compression with your new backbone:
-        python main.py --config experiments/cms_experiment/cms_experiment.yaml
-
-STREAMING / STATEFUL COMPRESSION (LSTM only)
-=============================================
-The LSTM backbone preserves hidden state (h, c) across chunks, enabling
-true streaming compression. In codec.py or wherever chunks are processed:
-
-    state = None
-    for chunk in chunks:
-        logits, state = model(chunk, state)
-        # pass `state` to next iteration to maintain context across chunks
-        # For Transformer: state is always None (it sees full chunk context)
-
-NOTES ON COMPRESSION RATIO
-===========================
-Compression ratio depends on the model's ability to predict byte probabilities
-accurately. LSTM captures local sequential patterns well. Transformer, with
-global attention, may find longer-range dependencies but needs more VRAM.
-Both should approach Mamba's compression ratio given sufficient training,
-but Mamba's selective state space design is particularly efficient for
-long sequences with sparse relevant information — typical of physics data.
-"""
-
 # ---------------------------------------------------------------------------
 # CLI entry point
 # ---------------------------------------------------------------------------
@@ -451,10 +397,7 @@ if __name__ == "__main__":
                         help="Print integration instructions")
     args = parser.parse_args()
 
-    if args.print_integration:
-        print(INTEGRATION_INSTRUCTIONS)
-
-    elif args.compare:
+    if args.compare:
         results = []
         for b in ["lstm", "transformer"]:
             r = run_benchmark(b, d_model=args.d_model,

@@ -1,11 +1,24 @@
 import torch
 import torch.nn as nn
 import numpy as np
+import os
 
 def BoaConstrictor(d_model=256, num_layers=4, vocab_size=256, device="cuda"):
     """ Construct a BoaBytePredictor with smaller model size for Boa experiments. """
+    BACKBONE = os.environ.get('BOA_BACKBONE', 'mamba').lower()
     IS_CUDA = torch.cuda.is_available() and device == "cuda"
 
+    if BACKBONE in ('lstm', 'transformer'):
+        from alternative_backbones import build_boa_model
+        print(f"[BOA] Using {BACKBONE} backbone from alternative_backbones.py")
+        model = build_boa_model(
+            backbone=BACKBONE,
+            d_model=d_model,
+            num_layers=num_layers,
+            vocab_size=vocab_size,
+        ).to(device)
+        return model
+    
     if IS_CUDA:
         device = "cuda"
         from mamba_ssm import Mamba
