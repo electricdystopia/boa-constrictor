@@ -249,6 +249,8 @@ class AlternativeBoaModel(nn.Module):
         **kwargs   : forwarded to backbone constructors
     """
 
+    MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
+
     def __init__(self, backbone: str = "lstm", d_model: int = 256,
                  num_layers: int = 4, **kwargs):
         super().__init__()
@@ -284,8 +286,6 @@ class AlternativeBoaModel(nn.Module):
         else:
             # Transformer: return a token buffer
             return {'tokens': torch.zeros(batch_size, 0, dtype=torch.long, device=d)}
-        
-    MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
 
     @torch.inference_mode()
     def step(self, byte_t: torch.Tensor, cache):
