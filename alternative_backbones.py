@@ -37,7 +37,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
-MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
+MAX_TRANSFORMER_CTX = 64  # cap context window to avoid OOM
 
 # ---------------------------------------------------------------------------
 # 1.  Shared building blocks
