@@ -48,7 +48,7 @@ class ByteEmbedding(nn.Module):
 
     def __init__(self, d_model: int):
         super().__init__()
-        self.num_embeddings = 256   # ← only change
+        self.num_embeddings = 256  
         self.embed = nn.Embedding(256, d_model)
         self.d_model = d_model
 
@@ -272,6 +272,31 @@ class AlternativeBoaModel(nn.Module):
             raise ValueError(f"Unknown backbone '{backbone}'. Use 'lstm' or 'transformer'.")
 
         self.proj = ByteProjection(d_model)
+
+    def init_stream(self, max_len: int, batch_size: int = 1, device=None, dtype=None):
+        d = device or next(self.parameters()).device
+        if self._is_recurrent:
+            # LSTM: return (h_0, c_0) zero state
+            n_layers = self.backbone.lstm.num_layers
+            d_model  = self.backbone.lstm.hidden_size
+            h0 = torch.zeros(n_layers, batch_size, d_model, device=d)
+            return (h0, h0.clone())
+        else:
+            # Transformer: return a token buffer
+            return {'tokens': torch.zeros(batch_size, 0, dtype=torch.long, device=d)}
+
+    @torch.inference_mode()
+    def step(self, byte_t: torch.Tensor, cache):
+        if self._is_recurrent:
+            emb = self.embedding(byte_t).unsqueeze(1)   # [B, 1, D]
+            out, cache = self.backbone.lstm(emb, cache)  # out: [B, 1, D]
+            logits = self.proj(out.squeeze(1))           # [B, 256]
+            return logits
+        else:
+            new_tok = byte_t.unsqueeze(1)
+            cache['tokens'] = torch.cat([cache['tokens'], new_tok], dim=1)
+            logits_all, _ = self.forward(cache['tokens'])  # [B, L, 256]
+            return logits_all[:, -1, :]                    # [B, 256]
 
     def forward(self, x: torch.Tensor, state=None):
         """
