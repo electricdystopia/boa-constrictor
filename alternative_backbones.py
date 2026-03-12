@@ -37,7 +37,7 @@ import time
 import argparse
 import torch
 import torch.nn as nn
-
+MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
 
 # ---------------------------------------------------------------------------
 # 1.  Shared building blocks
@@ -248,8 +248,6 @@ class AlternativeBoaModel(nn.Module):
         num_layers : number of backbone layers
         **kwargs   : forwarded to backbone constructors
     """
-
-    MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
 
     def __init__(self, backbone: str = "lstm", d_model: int = 256,
                  num_layers: int = 4, **kwargs):
