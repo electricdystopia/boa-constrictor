@@ -48,7 +48,7 @@ class ByteEmbedding(nn.Module):
 
     def __init__(self, d_model: int):
         super().__init__()
-        self.num_embeddings = 256  
+        self.num_embeddings = 256   
         self.embed = nn.Embedding(256, d_model)
         self.d_model = d_model
 
