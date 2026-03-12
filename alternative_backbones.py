@@ -284,6 +284,8 @@ class AlternativeBoaModel(nn.Module):
         else:
             # Transformer: return a token buffer
             return {'tokens': torch.zeros(batch_size, 0, dtype=torch.long, device=d)}
+        
+    MAX_TRANSFORMER_CTX = 512  # cap context window to avoid OOM
 
     @torch.inference_mode()
     def step(self, byte_t: torch.Tensor, cache):
@@ -295,6 +297,9 @@ class AlternativeBoaModel(nn.Module):
         else:
             new_tok = byte_t.unsqueeze(1)
             cache['tokens'] = torch.cat([cache['tokens'], new_tok], dim=1)
+            # Cap to avoid quadratic OOM
+            if cache['tokens'].shape[1] > MAX_TRANSFORMER_CTX:
+                cache['tokens'] = cache['tokens'][:, -MAX_TRANSFORMER_CTX:]
             logits_all, _ = self.forward(cache['tokens'])  # [B, L, 256]
             return logits_all[:, -1, :]                    # [B, 256]
 
